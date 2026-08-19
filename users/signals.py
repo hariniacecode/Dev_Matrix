@@ -9,11 +9,12 @@ from .models import Profile
 
 def createProfile(sender, instance, created, **kwargs):
 
-    print("Profile Signal Triggered")
+    print("=== CREATE PROFILE SIGNAL ===")
 
     if created:
 
-        # Create profile
+        print("Creating profile...")
+
         profile = Profile.objects.create(
             user=instance,
             username=instance.username,
@@ -21,21 +22,25 @@ def createProfile(sender, instance, created, **kwargs):
             name=instance.first_name,
         )
 
-        # Send welcome email
+        print("Profile created:", profile)
+
         try:
+
+            print("Trying to send email to:", profile.email)
+
             send_mail(
                 subject="Welcome to DevSearch",
                 message="We are glad you are here!",
                 from_email=settings.EMAIL_HOST_USER,
                 recipient_list=[profile.email],
-                fail_silently=False
+                fail_silently=True,
             )
 
-            print("Welcome email sent successfully")
+            print("Email function completed")
 
         except Exception as e:
 
-            print("Email sending failed:", e)
+            print("EMAIL ERROR:", e)
 
 
 def updateUser(sender, instance, created, **kwargs):
@@ -61,11 +66,9 @@ def updateUser(sender, instance, created, **kwargs):
 def deleteUser(sender, instance, **kwargs):
 
     try:
-        user = instance.user
-        user.delete()
-
-    except Exception:
-        pass
+        instance.user.delete()
+    except Exception as e:
+        print("DELETE ERROR:", e)
 
 
 post_save.connect(createProfile, sender=User)
