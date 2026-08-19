@@ -3,40 +3,39 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.core.mail import send_mail
 from django.conf import settings
-from django.db import transaction
 
 from .models import Profile
 
 
 def createProfile(sender, instance, created, **kwargs):
+
     print("Profile Signal Triggered")
 
     if created:
+
+        # Create profile
+        profile = Profile.objects.create(
+            user=instance,
+            username=instance.username,
+            email=instance.email,
+            name=instance.first_name,
+        )
+
+        # Send welcome email
         try:
-            with transaction.atomic():
+            send_mail(
+                subject="Welcome to DevSearch",
+                message="We are glad you are here!",
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[profile.email],
+                fail_silently=False
+            )
 
-                # Create Profile
-                profile = Profile.objects.create(
-                    user=instance,
-                    username=instance.username,
-                    email=instance.email,
-                    name=instance.first_name,
-                )
-
-                # Send welcome email
-                send_mail(
-                    subject="Welcome to DevSearch",
-                    message="We are glad you are here!",
-                    from_email=settings.EMAIL_HOST_USER,
-                    recipient_list=[profile.email],
-                    fail_silently=False
-                )
+            print("Welcome email sent successfully")
 
         except Exception as e:
-            print("Email failed:", e)
 
-            # Delete the User if email failed
-            instance.delete()
+            print("Email sending failed:", e)
 
 
 def updateUser(sender, instance, created, **kwargs):
@@ -64,6 +63,7 @@ def deleteUser(sender, instance, **kwargs):
     try:
         user = instance.user
         user.delete()
+
     except Exception:
         pass
 
