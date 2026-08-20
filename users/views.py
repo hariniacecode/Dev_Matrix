@@ -13,28 +13,35 @@ from .utils import searchProfiles , paginateProfiles
 
 def loginUser(request):
     page = 'login'
-    context ={'page':page}
+    context = {'page': page}
+
     if request.user.is_authenticated:
         return redirect('profiles')
-    
-    if request.method=='POST':
+
+    if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
 
-        try:
-            user=User.objects.get(username=username)
-        except:
-            messages.error(request,'Username does not exist')
+        user = authenticate(
+            request,
+            username=username,
+            password=password
+        )
 
-        user = authenticate(request,username=username,password=password)
-         
         if user is not None:
-            login(request,user)
-            return redirect(request.GET['next'] if 'next' in request.GET else 'account')
+            login(request, user)
+            return redirect(
+                request.GET['next']
+                if 'next' in request.GET
+                else 'account'
+            )
         else:
-            messages.error(request,'Username does not exist')
-        
-    return render(request,'users/login_register.html',context)
+            messages.error(
+                request,
+                'Username or password is incorrect'
+            )
+
+    return render(request, 'users/login_register.html', context)
 
 def logoutUser(request): 
     logout(request)
